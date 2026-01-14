@@ -5,9 +5,11 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
+    "postbuild": "node scripts/prepare-deploy.js",
+    "build:prod": "node scripts/build-prod.js",
     "start": "next start",
     "lint": "eslint",
-    "deploy": "git add . && git commit -m \"Deploy to Hostinger\" && git push origin main"
+    "deploy": "npm run build:prod && echo 'Build pronto em .next/standalone. Faça o upload via FTP.'"
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"
