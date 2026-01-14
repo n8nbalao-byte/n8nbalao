@@ -1,0 +1,131 @@
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  id        String   @id @default(uuid())
+  name      String
+  email     String   @unique
+  password  String
+  role      String   @default("SALES") // ADMIN, SALES
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  sales     Sale[]
+}
+
+model Client {
+  id        String   @id @default(uuid())
+  name      String
+  document  String   @unique // CPF or CNPJ
+  type      String   // PF or PJ
+  email     String?
+  phone     String?
+  address   String?
+  city      String?
+  state     String?
+  zipCode   String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  sales     Sale[]
+}
+
+model Product {
+  id          String   @id @default(uuid())
+  code        String   @unique
+  name        String
+  unit        String   // UN, KG, M
+  basePrice   Float
+  steelType   String?  // CA-50, CA-60, CA-25
+  category    String?  // BASE (Raw Steel) or FINAL (Assembled)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  saleItems   SaleItem[]
+}
+
+model Sale {
+  id              String   @id @default(uuid())
+  clientId        String
+  client          Client   @relation(fields: [clientId], references: [id])
+  userId          String
+  user            User     @relation(fields: [userId], references: [id])
+  status          String   @default("DRAFT") // DRAFT, CONFIRMED, IN_PRODUCTION, PARTIALLY_DELIVERED, COMPLETED, CANCELLED
+  total           Float    @default(0)
+  paymentMethod   String?  // PIX, CASH, DEBIT, CREDIT
+  installments    Int?     // 1-24
+  interestRate    Float?   // Monthly interest rate (e.g., 2.0 for 2%)
+  deliveryDate    DateTime?
+  deliveryNotes   String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  items           SaleItem[]
+  productionOrder ProductionOrder?
+  deliveries      Delivery[]
+}
+
+model SaleItem {
+  id          String   @id @default(uuid())
+  saleId      String
+  sale        Sale     @relation(fields: [saleId], references: [id], onDelete: Cascade)
+  productId   String?
+  product     Product? @relation(fields: [productId], references: [id])
+  description String
+  quantity    Float
+  unitPrice   Float
+  totalPrice  Float
+  
+  // Calculator specifics
+  dimensions  String?  // JSON string: { type: "stirrup", width: 20, height: 30, length: ... }
+  structureType String? // Laje, Viga, Coluna, etc.
+  weight      Float?   // Calculated weight in KG
+  observation String?  // Item specific observation
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model ProductionOrder {
+  id        String   @id @default(uuid())
+  saleId    String   @unique
+  sale      Sale     @relation(fields: [saleId], references: [id])
+  status    String   @default("PENDING") // PENDING, IN_PROGRESS, COMPLETED
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Delivery {
+  id            String   @id @default(uuid())
+  saleId        String
+  sale          Sale     @relation(fields: [saleId], references: [id])
+  scheduledDate DateTime
+  status        String   @default("PENDING") // PENDING, DELIVERED, CANCELLED
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+model CompanyInfo {
+  id          String   @id @default("singleton")
+  name        String?
+  tradeName   String?
+  cnpj        String?
+  logoUrl     String?
+  email       String?
+  phone       String?
+  whatsapp    String?
+  address     String?
+  city        String?
+  state       String?
+  zipCode     String?
+  instagram   String?
+  facebook    String?
+  website     String?
+  openaiApiKey String?
+  geminiApiKey String?
+  groqApiKey   String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
